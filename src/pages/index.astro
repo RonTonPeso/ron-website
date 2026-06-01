@@ -1,17 +1,24 @@
 ---
-
+import ProjectsGrid from "../components/ProjectsGrid.astro";
+import { featuredProjects } from "../data/projects";
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+	title="Ronnie Wang"
+	description="Ronnie Wang is a software engineer passionate about AI and penguins."
+>
+	<section class="hero" aria-labelledby="home-heading">
+		<div class="hero-content">
+			<p class="kicker">Aurora field notes</p>
+			<h1 id="home-heading">Ronnie Wang</h1>
+			<p class="blurb">Software engineer passionate about AI and penguins.</p>
+			<div class="link-row" aria-label="Contact links">
+				<a href="mailto:wronnie@seas.upenn.edu">Email</a>
+				<a href="https://github.com/RonTonPeso">GitHub</a>
+			</div>
+		</div>
+	</section>
+
+	<ProjectsGrid projects={featuredProjects} heading="Projects" />
+</BaseLayout>

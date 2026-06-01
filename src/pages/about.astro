@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const basePath = import.meta.env.BASE_URL.endsWith("/")
+	? import.meta.env.BASE_URL
+	: `${import.meta.env.BASE_URL}/`;
+const aboutPhoto = `${basePath}delta_ronnie_wang%20copy.jpg`;
+---
+
+<BaseLayout
+	title="About | Ronnie Wang"
+	description="About Ronald Ronnie Wang, a student in Penn Engineering interested in materials science, computer science, sustainability, and culture."
+>
+	<section class="page-section text-page">
+		<p class="kicker">About the engineer</p>
+		<h1 class="page-title">About</h1>
+		<div class="about-layout">
+			<figure class="about-photo">
+				<img
+					src={aboutPhoto}
+					alt="Ronnie Wang sitting near large green plants by a window"
+				/>
+				<figcaption>Ronnie Wang</figcaption>
+			</figure>
+			<div>
+				<div class="prose">
+					<p>
+						Ronald (Ronnie) Wang is a student in the School of Engineering and
+						Applied Science, aspiring to major in materials science and computer
+						science. He is currently conducting research on novel materials with
+						the Li Group and research on computational sustainability.
+					</p>
+					<p>
+						Ronnie believes engineers can help communities by increasing
+						efficiency and supporting a more equitable distribution of resources.
+						He is also fascinated by different cultures and perspectives, and is
+						not afraid to explore.
+					</p>
+					<p>
+						He is currently a member of Onda Latina, where he explores Latin
+						American culture through dance. Language learning is another way
+						Ronnie learns about cultures, and he is improving his Mandarin,
+						Shanghai dialect, Spanish, and French.
+					</p>
+					<p>
+						Coming from a small town, Ronnie is excited by the diverse and large
+						community at the University of Pennsylvania. He hopes to learn more
+						about how engineers can help small-town and rural communities thrive
+						despite dwindling populations and limited resources, while also
+						sharing small-town perspectives to increase political empathy.
+					</p>
+				</div>
+				<div class="link-row" aria-label="Contact links">
+					<a href="mailto:wronnie@seas.upenn.edu">Email</a>
+					<a href="https://github.com/RonTonPeso">GitHub</a>
+				</div>
+			</div>
+		</div>
+	</section>
+</BaseLayout>

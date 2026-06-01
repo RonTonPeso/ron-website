@@ -1,0 +1,63 @@
+---
+import { projects, type Project } from "../../data/projects";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+	return projects.map((project) => ({
+		params: { slug: project.slug },
+		props: { project }
+	}));
+}
+
+const { project } = Astro.props as { project: Project };
+const basePath = import.meta.env.BASE_URL.endsWith("/")
+	? import.meta.env.BASE_URL
+	: `${import.meta.env.BASE_URL}/`;
+const projectsHref = `${basePath}projects`;
+---
+
+<BaseLayout title={`${project.title} | Ronnie Wang`} description={project.description}>
+	<article class="page-section project-detail">
+		<a class="back-link" href={projectsHref}>Back to projects</a>
+		<header class="detail-header">
+			<p class="kicker">Project field note</p>
+			<h1 class="page-title">{project.title}</h1>
+			<p class="blurb">{project.description}</p>
+		</header>
+
+		<div class="detail-body">
+			<div>
+				<div class="prose">
+					{project.details.map((paragraph) => <p>{paragraph}</p>)}
+				</div>
+
+				{
+					project.embedUrl && (
+						<iframe
+							class="project-embed"
+							src={project.embedUrl}
+							title={`${project.title} embedded preview`}
+							loading="lazy"
+						/>
+					)
+				}
+			</div>
+
+			<aside class="detail-aside" aria-label={`${project.title} project metadata`}>
+				<p>Stack and signals</p>
+				<ul class="project-tags detail-tags" aria-label={`${project.title} technologies`}>
+					{project.tags.map((tag) => <li>{tag}</li>)}
+				</ul>
+
+				{
+					(project.repoUrl || project.demoUrl) && (
+						<div class="link-row" aria-label={`${project.title} links`}>
+							{project.repoUrl && <a href={project.repoUrl}>Repository</a>}
+							{project.demoUrl && <a href={project.demoUrl}>Demo</a>}
+						</div>
+					)
+				}
+			</aside>
+		</div>
+	</article>
+</BaseLayout>
