@@ -292,6 +292,7 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 				min-height: calc(100vh - 68px);
 				margin: 0 auto;
 				padding: 7rem 0 9rem;
+				overflow: hidden;
 			}
 
 			.hero::before {
@@ -312,8 +313,297 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 
 			.hero-content {
 				position: relative;
-				max-width: 800px;
-				animation: reveal-up 720ms ease-out both;
+				z-index: 1;
+				max-width: 880px;
+			}
+
+			/* orchestrated staggered entrance for the hero */
+			.hero-content > * {
+				animation: hero-rise 820ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+			}
+
+			.hero-kicker {
+				animation-delay: 60ms;
+			}
+
+			.hero-name {
+				animation-delay: 150ms;
+			}
+
+			.hero-blurb {
+				animation-delay: 320ms;
+			}
+
+			.hero-meta {
+				animation-delay: 440ms;
+			}
+
+			.hero-actions {
+				animation-delay: 560ms;
+			}
+
+			/* brighter aurora ribbon focused behind the name */
+			.hero-aurora {
+				position: absolute;
+				inset: 4% -12% auto -8%;
+				z-index: -2;
+				height: 62%;
+				background:
+					repeating-linear-gradient(
+						94deg,
+						transparent 0 3rem,
+						rgba(112, 255, 158, 0.22) 4rem,
+						rgba(97, 242, 255, 0.26) 5.5rem,
+						transparent 7rem 11rem
+					),
+					repeating-linear-gradient(
+						86deg,
+						transparent 0 4rem,
+						rgba(181, 114, 255, 0.18) 6rem,
+						rgba(84, 137, 255, 0.2) 7.5rem,
+						transparent 9.5rem 15rem
+					);
+				background-size: 200% 100%, 230% 100%;
+				background-position: 0% 0%, 100% 0%;
+				filter: blur(42px) saturate(170%);
+				mask-image: radial-gradient(72% 82% at 34% 50%, #000, transparent 76%);
+				-webkit-mask-image: radial-gradient(72% 82% at 34% 50%, #000, transparent 76%);
+				opacity: 0.8;
+				pointer-events: none;
+				transform: skewX(-9deg);
+				animation: aurora-drift 24s ease-in-out infinite alternate;
+			}
+
+			/* aurora glow that tracks the pointer across the hero */
+			.hero-glow {
+				position: absolute;
+				inset: 0;
+				z-index: -1;
+				background: radial-gradient(
+					26rem 26rem at var(--mx, 32%) var(--my, 42%),
+					rgba(112, 255, 158, 0.16),
+					rgba(97, 242, 255, 0.06) 38%,
+					transparent 62%
+				);
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 500ms ease;
+			}
+
+			.hero.pointer-active .hero-glow {
+				opacity: 1;
+			}
+
+			/* vertical expedition rail on the right margin */
+			.hero-rail {
+				position: absolute;
+				top: 50%;
+				right: 0.25rem;
+				z-index: 1;
+				color: var(--ink-soft);
+				font-family: "IBM Plex Mono", monospace;
+				font-size: 0.7rem;
+				letter-spacing: 0.32em;
+				text-transform: uppercase;
+				opacity: 0.55;
+				writing-mode: vertical-rl;
+				transform: translateY(-50%) rotate(180deg);
+			}
+
+			.hero-kicker {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.6rem;
+			}
+
+			.station-dot {
+				width: 7px;
+				height: 7px;
+				border-radius: 50%;
+				background: var(--green);
+				box-shadow: 0 0 10px var(--green);
+				animation: pulse 2.4s ease-in-out infinite;
+			}
+
+			/* the name: letters filled by a drifting aurora gradient */
+			.hero h1.hero-name {
+				font-size: clamp(3.4rem, 13vw, 9.5rem);
+				line-height: 0.84;
+				letter-spacing: -0.045em;
+				text-shadow: none;
+			}
+
+			.hero-line {
+				display: block;
+				background: linear-gradient(
+					100deg,
+					#c7ffe0 0%,
+					var(--green) 20%,
+					var(--cyan) 44%,
+					#9fd0ff 60%,
+					var(--violet) 80%,
+					#ecd8ff 100%
+				);
+				background-size: 220% 100%;
+				background-clip: text;
+				-webkit-background-clip: text;
+				color: transparent;
+				-webkit-text-fill-color: transparent;
+				filter:
+					drop-shadow(0 0 42px rgba(97, 242, 255, 0.22))
+					drop-shadow(0 0 90px rgba(112, 255, 158, 0.14));
+				animation: name-shimmer 14s ease-in-out infinite alternate;
+			}
+
+			.hero-line:nth-child(2) {
+				margin-left: 0.06em;
+				animation-delay: -7s;
+			}
+
+			.hero-blurb .hl-ai {
+				color: var(--cyan);
+			}
+
+			.hero-blurb .hl-peng {
+				color: var(--green);
+			}
+
+			.hero-meta {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.9rem;
+				margin-top: 1.9rem;
+				color: var(--ink-soft);
+				font-family: "IBM Plex Mono", monospace;
+				font-size: 0.78rem;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+
+			.meta-sep {
+				width: 4px;
+				height: 4px;
+				border-radius: 50%;
+				background: var(--ink-soft);
+				opacity: 0.5;
+			}
+
+			.meta-status {
+				display: inline-flex;
+				align-items: center;
+				color: var(--ink-muted);
+			}
+
+			.status-dot {
+				width: 7px;
+				height: 7px;
+				margin-right: 0.5rem;
+				border-radius: 50%;
+				background: var(--green);
+				box-shadow: 0 0 10px var(--green);
+				animation: pulse 2.4s ease-in-out infinite;
+			}
+
+			.hero-actions {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.9rem;
+				margin-top: 2.1rem;
+			}
+
+			.btn-primary,
+			.btn-ghost {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				border-radius: 999px;
+				padding: 0.82rem 1.45rem;
+				font-family: "IBM Plex Mono", monospace;
+				font-size: 0.82rem;
+				font-weight: 600;
+				letter-spacing: 0.02em;
+				text-transform: uppercase;
+				transition:
+					transform 180ms ease,
+					box-shadow 180ms ease,
+					border-color 180ms ease,
+					color 180ms ease;
+			}
+
+			.btn-primary {
+				color: var(--night-deep);
+				background: linear-gradient(100deg, var(--green), var(--cyan));
+				box-shadow: 0 0 0 1px rgba(112, 255, 158, 0.4), 0 14px 40px rgba(112, 255, 158, 0.18);
+			}
+
+			.btn-primary:hover,
+			.btn-primary:focus-visible {
+				transform: translateY(-2px);
+				box-shadow: 0 0 0 1px rgba(112, 255, 158, 0.65), 0 18px 52px rgba(112, 255, 158, 0.32);
+			}
+
+			.btn-ghost {
+				color: var(--ink);
+				border: 1px solid var(--line-strong);
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.btn-ghost:hover,
+			.btn-ghost:focus-visible {
+				transform: translateY(-2px);
+				border-color: var(--green);
+				color: var(--green);
+			}
+
+			.btn-primary span,
+			.btn-ghost span {
+				transition: transform 180ms ease;
+			}
+
+			.btn-primary:hover span,
+			.btn-ghost:hover span {
+				transform: translate(2px, -2px);
+			}
+
+			/* animated scroll cue pinned to the bottom of the hero */
+			.hero-scroll {
+				position: absolute;
+				bottom: 2.2rem;
+				left: 0;
+				z-index: 1;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.85rem;
+				color: var(--ink-soft);
+				font-family: "IBM Plex Mono", monospace;
+				font-size: 0.74rem;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				transition: color 180ms ease;
+			}
+
+			.hero-scroll:hover,
+			.hero-scroll:focus-visible {
+				color: var(--green);
+			}
+
+			.scroll-line {
+				position: relative;
+				width: 58px;
+				height: 1px;
+				background: var(--line-strong);
+				overflow: hidden;
+			}
+
+			.scroll-line::after {
+				position: absolute;
+				inset: 0;
+				width: 42%;
+				background: var(--green);
+				box-shadow: 0 0 8px var(--green);
+				content: "";
+				animation: scroll-sweep 2.2s ease-in-out infinite;
 			}
 
 			.kicker,
@@ -774,6 +1064,51 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 				}
 			}
 
+			@keyframes hero-rise {
+				from {
+					opacity: 0;
+					transform: translateY(28px);
+				}
+
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			@keyframes name-shimmer {
+				from {
+					background-position: 0% 50%;
+				}
+
+				to {
+					background-position: 100% 50%;
+				}
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+					transform: scale(1);
+				}
+
+				50% {
+					opacity: 0.45;
+					transform: scale(0.78);
+				}
+			}
+
+			@keyframes scroll-sweep {
+				0% {
+					transform: translateX(-100%);
+				}
+
+				100% {
+					transform: translateX(240%);
+				}
+			}
+
 			@media (max-width: 920px) {
 				.hero h1,
 				.page-title {
@@ -815,6 +1150,19 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 				.hero {
 					min-height: calc(100vh - 58px);
 					padding: 5rem 0 6rem;
+				}
+
+				.hero-rail {
+					display: none;
+				}
+
+				.hero-scroll {
+					bottom: 1.4rem;
+				}
+
+				.hero-meta {
+					font-size: 0.72rem;
+					gap: 0.7rem;
 				}
 
 				.hero h1,
@@ -927,6 +1275,22 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 					});
 				});
 			})();
+		</script>
+		<script is:inline>
+			// aurora glow follows the pointer across the hero (fine pointers only)
+			addEventListener("DOMContentLoaded", function () {
+				var hero = document.querySelector(".hero");
+				if (!hero || !(window.matchMedia && window.matchMedia("(pointer: fine)").matches)) return;
+				hero.addEventListener("pointermove", function (e) {
+					var r = hero.getBoundingClientRect();
+					hero.style.setProperty("--mx", ((e.clientX - r.left) / r.width) * 100 + "%");
+					hero.style.setProperty("--my", ((e.clientY - r.top) / r.height) * 100 + "%");
+					hero.classList.add("pointer-active");
+				});
+				hero.addEventListener("pointerleave", function () {
+					hero.classList.remove("pointer-active");
+				});
+			});
 		</script>
 	</body>
 </html>
