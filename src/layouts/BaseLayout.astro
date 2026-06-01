@@ -1,7 +1,7 @@
 ---
 const {
 	title = "Ronnie Wang",
-	description = "Ronnie Wang is a software engineer passionate about AI and penguins."
+	description = "Ronnie Wang is a software engineer and University of Pennsylvania computer science student, passionate about AI and penguins."
 } = Astro.props;
 
 const pathname = Astro.url.pathname;
@@ -14,6 +14,26 @@ const currentPath = pathname.startsWith(basePath)
 	: pathname;
 const penguinImage = hrefWithBase("penguin_profile.png");
 const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
+
+const canonicalURL = new URL(pathname, Astro.site ?? Astro.url).toString();
+const homeURL = new URL(hrefWithBase("/"), Astro.site ?? Astro.url).toString();
+
+// Person structured data so search engines understand the site is about Ronnie Wang
+const personLd = {
+	"@context": "https://schema.org",
+	"@type": "Person",
+	name: "Ronnie Wang",
+	alternateName: "Ronald Wang",
+	url: homeURL,
+	image: socialImage,
+	jobTitle: "Software Engineer",
+	alumniOf: {
+		"@type": "CollegeOrUniversity",
+		name: "University of Pennsylvania"
+	},
+	knowsAbout: ["Artificial Intelligence", "Software Engineering", "Systems", "Infrastructure"],
+	sameAs: ["https://github.com/RonTonPeso"]
+};
 ---
 
 <!doctype html>
@@ -37,6 +57,8 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
+		<link rel="canonical" href={canonicalURL} />
+		<meta property="og:url" content={canonicalURL} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
@@ -45,6 +67,7 @@ const socialImage = new URL(penguinImage, Astro.site ?? Astro.url).toString();
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={socialImage} />
+		<script type="application/ld+json" is:inline set:html={JSON.stringify(personLd)} />
 		<link rel="icon" type="image/png" href={penguinImage} />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
