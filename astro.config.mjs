@@ -4,6 +4,6 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://rontonpeso.github.io',
+  site: 'https://ronniewang.com',
   integrations: [sitemap()],
 });
