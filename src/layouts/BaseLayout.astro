@@ -378,10 +378,13 @@ const personLd = {
 			/* the name: letters filled by a drifting aurora gradient */
 			.hero h1.hero-name {
 				font-size: clamp(3.4rem, 13vw, 9.5rem);
-				/* full descender room so background-clip:text doesn't crop the g; tight stack restored via margin below */
-				line-height: 1.12;
+				line-height: 1.04;
 				letter-spacing: -0.045em;
 				text-shadow: none;
+				/* glow lives on the parent, not the clipped lines, so it can't crop descenders */
+				filter:
+					drop-shadow(0 0 42px rgba(97, 242, 255, 0.22))
+					drop-shadow(0 0 90px rgba(112, 255, 158, 0.14));
 			}
 
 			.hero-line {
@@ -400,9 +403,6 @@ const personLd = {
 				-webkit-background-clip: text;
 				color: transparent;
 				-webkit-text-fill-color: transparent;
-				filter:
-					drop-shadow(0 0 42px rgba(97, 242, 255, 0.22))
-					drop-shadow(0 0 90px rgba(112, 255, 158, 0.14));
 				animation: name-shimmer 14s ease-in-out infinite alternate;
 			}
 
