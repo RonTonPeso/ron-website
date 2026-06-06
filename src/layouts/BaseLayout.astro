@@ -378,7 +378,7 @@ const personLd = {
 			/* the name: letters filled by a drifting aurora gradient */
 			.hero h1.hero-name {
 				font-size: clamp(3.4rem, 13vw, 9.5rem);
-				line-height: 1.04;
+				line-height: 0.92;
 				letter-spacing: -0.045em;
 				text-shadow: none;
 				/* glow lives on the parent, not the clipped lines, so it can't crop descenders */
@@ -389,6 +389,10 @@ const personLd = {
 
 			.hero-line {
 				display: block;
+				/* extend the gradient paint area below the baseline so descenders (g) are never
+				   cropped by background-clip: text; the negative margin cancels the layout shift */
+				padding-bottom: 0.34em;
+				margin-bottom: -0.34em;
 				background: linear-gradient(
 					100deg,
 					#c7ffe0 0%,
@@ -408,8 +412,6 @@ const personLd = {
 
 			.hero-line:nth-child(2) {
 				margin-left: 0.06em;
-				/* pull the second line up to keep the tight stack now that line-height has descender room */
-				margin-top: -0.32em;
 				animation-delay: -7s;
 			}
 
