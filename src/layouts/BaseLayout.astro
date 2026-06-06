@@ -378,7 +378,8 @@ const personLd = {
 			/* the name: letters filled by a drifting aurora gradient */
 			.hero h1.hero-name {
 				font-size: clamp(3.4rem, 13vw, 9.5rem);
-				line-height: 0.84;
+				/* full descender room so background-clip:text doesn't crop the g; tight stack restored via margin below */
+				line-height: 1.12;
 				letter-spacing: -0.045em;
 				text-shadow: none;
 			}
@@ -407,8 +408,8 @@ const personLd = {
 
 			.hero-line:nth-child(2) {
 				margin-left: 0.06em;
-				/* room so the descender (g in Wang) isn't clipped by background-clip: text */
-				padding-bottom: 0.16em;
+				/* pull the second line up to keep the tight stack now that line-height has descender room */
+				margin-top: -0.32em;
 				animation-delay: -7s;
 			}
 
