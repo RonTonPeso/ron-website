@@ -1,0 +1,343 @@
+---
+// "Audio twin finder" — a self-contained mini of Hit Forensics' Q6 k-NN audio similarity.
+// Computes nearest neighbors in 5-D audio-feature space, client-side, over a small sample.
+---
+
+<section class="demo-panel" aria-labelledby="sim-demo-title">
+	<div class="demo-heading">
+		<p class="demo-eyebrow">Interactive artifact</p>
+		<h2 id="sim-demo-title" class="demo-h2">Audio twin finder</h2>
+		<p class="demo-note">
+			Pick a song and the demo finds its closest "audio twins" by measuring distance across five
+			audio features, the same k-nearest-neighbor idea the app runs across 447k tracks with a
+			GiST-indexed <code>cube</code>. <em>Illustrative 20-track sample; feature values are approximate.</em>
+		</p>
+	</div>
+
+	<div class="similarity-demo" data-sim>
+		<div class="sim-controls">
+			<label class="sim-label" for="sim-seed">Seed track</label>
+			<select id="sim-seed" class="sim-select" data-sim-seed></select>
+		</div>
+
+		<div class="sim-grid">
+			<div class="sim-card">
+				<h3 class="sim-sub">Audio fingerprint</h3>
+				<div class="sim-bars" data-sim-bars></div>
+			</div>
+			<div class="sim-card">
+				<h3 class="sim-sub">Closest twins <span class="sim-knn">k-NN · 5-D</span></h3>
+				<ol class="sim-twins" data-sim-twins></ol>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script is:inline>
+	(() => {
+		const root = document.querySelector("[data-sim]");
+		if (!root) return;
+
+		// [danceability, energy, valence, acousticness, instrumentalness] — approximate, illustrative
+		const FEATURES = [
+			{ key: "dnc", label: "Danceability" },
+			{ key: "nrg", label: "Energy" },
+			{ key: "val", label: "Valence" },
+			{ key: "aco", label: "Acousticness" },
+			{ key: "ins", label: "Instrumentalness" },
+		];
+
+		const TRACKS = [
+			{ name: "Billie Jean", artist: "Michael Jackson", dnc: 0.92, nrg: 0.65, val: 0.86, aco: 0.02, ins: 0.0 },
+			{ name: "Uptown Funk", artist: "Mark Ronson ft. Bruno Mars", dnc: 0.86, nrg: 0.82, val: 0.93, aco: 0.01, ins: 0.0 },
+			{ name: "Get Lucky", artist: "Daft Punk", dnc: 0.79, nrg: 0.81, val: 0.86, aco: 0.04, ins: 0.0 },
+			{ name: "One More Time", artist: "Daft Punk", dnc: 0.61, nrg: 0.7, val: 0.8, aco: 0.01, ins: 0.07 },
+			{ name: "Believe", artist: "Cher", dnc: 0.76, nrg: 0.77, val: 0.67, aco: 0.07, ins: 0.0 },
+			{ name: "Shape of You", artist: "Ed Sheeran", dnc: 0.83, nrg: 0.65, val: 0.93, aco: 0.58, ins: 0.0 },
+			{ name: "Rolling in the Deep", artist: "Adele", dnc: 0.73, nrg: 0.77, val: 0.51, aco: 0.14, ins: 0.0 },
+			{ name: "Lose Yourself", artist: "Eminem", dnc: 0.69, nrg: 0.75, val: 0.4, aco: 0.03, ins: 0.0 },
+			{ name: "Smells Like Teen Spirit", artist: "Nirvana", dnc: 0.5, nrg: 0.91, val: 0.72, aco: 0.0, ins: 0.0 },
+			{ name: "Sweet Child O' Mine", artist: "Guns N' Roses", dnc: 0.47, nrg: 0.92, val: 0.68, aco: 0.02, ins: 0.0 },
+			{ name: "Hotel California", artist: "Eagles", dnc: 0.58, nrg: 0.51, val: 0.61, aco: 0.24, ins: 0.0 },
+			{ name: "Hey Jude", artist: "The Beatles", dnc: 0.39, nrg: 0.59, val: 0.52, aco: 0.31, ins: 0.0 },
+			{ name: "Wonderwall", artist: "Oasis", dnc: 0.41, nrg: 0.65, val: 0.43, aco: 0.18, ins: 0.0 },
+			{ name: "Bohemian Rhapsody", artist: "Queen", dnc: 0.39, nrg: 0.4, val: 0.23, aco: 0.29, ins: 0.0 },
+			{ name: "Bad Guy", artist: "Billie Eilish", dnc: 0.7, nrg: 0.43, val: 0.56, aco: 0.33, ins: 0.13 },
+			{ name: "Someone Like You", artist: "Adele", dnc: 0.43, nrg: 0.27, val: 0.29, aco: 0.81, ins: 0.0 },
+			{ name: "Strobe", artist: "deadmau5", dnc: 0.55, nrg: 0.73, val: 0.2, aco: 0.02, ins: 0.8 },
+			{ name: "Take Five", artist: "Dave Brubeck", dnc: 0.55, nrg: 0.3, val: 0.55, aco: 0.55, ins: 0.85 },
+			{ name: "Clair de Lune", artist: "Claude Debussy", dnc: 0.25, nrg: 0.03, val: 0.12, aco: 0.99, ins: 0.9 },
+			{ name: "Weightless", artist: "Marconi Union", dnc: 0.3, nrg: 0.06, val: 0.05, aco: 0.85, ins: 0.9 },
+		];
+
+		const seedSel = root.querySelector("[data-sim-seed]");
+		const barsEl = root.querySelector("[data-sim-bars]");
+		const twinsEl = root.querySelector("[data-sim-twins]");
+
+		TRACKS.forEach((t, i) => {
+			const opt = document.createElement("option");
+			opt.value = String(i);
+			opt.textContent = `${t.name} — ${t.artist}`;
+			seedSel.appendChild(opt);
+		});
+
+		const dist = (a, b) =>
+			Math.sqrt(FEATURES.reduce((s, f) => s + (a[f.key] - b[f.key]) ** 2, 0));
+		const MAX = Math.sqrt(FEATURES.length); // max possible distance in 5-D unit cube
+
+		const renderFingerprint = (track) => {
+			barsEl.innerHTML = "";
+			FEATURES.forEach((f) => {
+				const row = document.createElement("div");
+				row.className = "sim-bar-row";
+				const label = document.createElement("span");
+				label.className = "sim-bar-label";
+				label.textContent = f.label;
+				const track2 = document.createElement("span");
+				track2.className = "sim-bar-track";
+				const fill = document.createElement("span");
+				fill.className = "sim-bar-fill";
+				fill.style.width = `${Math.round(track[f.key] * 100)}%`;
+				track2.appendChild(fill);
+				const val = document.createElement("span");
+				val.className = "sim-bar-val";
+				val.textContent = track[f.key].toFixed(2);
+				row.append(label, track2, val);
+				barsEl.appendChild(row);
+			});
+		};
+
+		const renderTwins = (seedIndex) => {
+			const seed = TRACKS[seedIndex];
+			const ranked = TRACKS.map((t, i) => ({ t, i, d: dist(seed, t) }))
+				.filter((x) => x.i !== seedIndex)
+				.sort((a, b) => a.d - b.d)
+				.slice(0, 5);
+			twinsEl.innerHTML = "";
+			ranked.forEach((x) => {
+				const sim = Math.round((1 - x.d / MAX) * 100);
+				const li = document.createElement("li");
+				li.className = "sim-twin";
+				const main = document.createElement("div");
+				main.className = "sim-twin-main";
+				const name = document.createElement("span");
+				name.className = "sim-twin-name";
+				name.textContent = x.t.name;
+				const artist = document.createElement("span");
+				artist.className = "sim-twin-artist";
+				artist.textContent = x.t.artist;
+				main.append(name, artist);
+				const meterWrap = document.createElement("div");
+				meterWrap.className = "sim-twin-meter";
+				const meterFill = document.createElement("span");
+				meterFill.style.width = `${sim}%`;
+				meterWrap.appendChild(meterFill);
+				const pct = document.createElement("span");
+				pct.className = "sim-twin-pct";
+				pct.textContent = `${sim}%`;
+				li.append(main, meterWrap, pct);
+				twinsEl.appendChild(li);
+			});
+		};
+
+		const update = () => {
+			const i = Number(seedSel.value);
+			renderFingerprint(TRACKS[i]);
+			renderTwins(i);
+		};
+
+		seedSel.addEventListener("change", update);
+		seedSel.value = "2"; // default to Get Lucky
+		update();
+	})();
+</script>
+
+<style is:global>
+	.similarity-demo {
+		padding: 1.4rem;
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		background: linear-gradient(160deg, rgba(20, 35, 48, 0.6), rgba(8, 15, 25, 0.66));
+		box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+	}
+
+	.sim-controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.7rem;
+		margin-bottom: 1.3rem;
+	}
+
+	.sim-label {
+		color: var(--ink-soft);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.72rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.sim-select {
+		flex: 1;
+		min-width: 220px;
+		padding: 0.55rem 0.8rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 9px;
+		background: rgba(4, 12, 20, 0.8);
+		color: var(--ink);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.86rem;
+	}
+
+	.sim-select:focus-visible {
+		outline: 2px solid var(--cyan);
+		outline-offset: 2px;
+	}
+
+	.sim-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.1rem;
+	}
+
+	.sim-card {
+		padding: 1.1rem 1.2rem;
+		border: 1px solid var(--line);
+		border-radius: 11px;
+		background: rgba(4, 12, 20, 0.45);
+	}
+
+	.sim-sub {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin: 0 0 1rem;
+		color: var(--ink);
+		font-family: "Fraunces", Georgia, serif;
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+
+	.sim-knn {
+		color: var(--ink-soft);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.68rem;
+		font-weight: 400;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	/* fingerprint bars */
+	.sim-bar-row {
+		display: grid;
+		grid-template-columns: 7.5rem 1fr 2.4rem;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.7rem;
+	}
+
+	.sim-bar-label {
+		color: var(--ink-muted);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.72rem;
+	}
+
+	.sim-bar-track {
+		position: relative;
+		height: 8px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.06);
+		overflow: hidden;
+	}
+
+	.sim-bar-fill {
+		position: absolute;
+		inset: 0 auto 0 0;
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--green), var(--cyan));
+		transition: width 350ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.sim-bar-val {
+		color: var(--ink-soft);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.72rem;
+		text-align: right;
+	}
+
+	/* twins list */
+	.sim-twins {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.sim-twin {
+		display: grid;
+		grid-template-columns: 1fr 5rem 2.6rem;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.55rem 0;
+		border-top: 1px solid var(--line);
+	}
+
+	.sim-twin:first-child {
+		border-top: 0;
+	}
+
+	.sim-twin-main {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.sim-twin-name {
+		color: var(--ink);
+		font-size: 0.92rem;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.sim-twin-artist {
+		color: var(--ink-soft);
+		font-size: 0.76rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.sim-twin-meter {
+		height: 6px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.06);
+		overflow: hidden;
+	}
+
+	.sim-twin-meter span {
+		display: block;
+		height: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--cyan), var(--violet));
+		transition: width 350ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.sim-twin-pct {
+		color: var(--green);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-align: right;
+	}
+
+	@media (max-width: 700px) {
+		.sim-grid {
+			grid-template-columns: 1fr;
+		}
+		.sim-bar-row {
+			grid-template-columns: 6.5rem 1fr 2.2rem;
+		}
+	}
+</style>

@@ -26,6 +26,8 @@ const projectsHref = `${basePath}projects`;
 			<p class="blurb">{project.description}</p>
 		</header>
 
+		<DemoRenderer project={project} />
+
 		<div class="detail-body">
 			<div>
 				<div class="prose">
@@ -60,7 +62,5 @@ const projectsHref = `${basePath}projects`;
 				}
 			</aside>
 		</div>
-
-		<DemoRenderer project={project} />
 	</article>
 </BaseLayout>

@@ -1,11 +1,13 @@
 ---
 import type { Project } from "../data/projects";
 import TerminalDemo from "./demos/TerminalDemo.astro";
+import SimilarityDemo from "./demos/SimilarityDemo.astro";
 
 // Map a project's `demo` key to its interactive component.
 // Add new demos here as they are built (chess, charts, paint, ...).
 const demoComponents: Record<string, any> = {
 	terminal: TerminalDemo,
+	similarity: SimilarityDemo,
 };
 
 const { project } = Astro.props as { project: Project };

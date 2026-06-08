@@ -43,7 +43,8 @@ export const projects: Project[] = [
 			"As a graded course assignment, the source code cannot be shared publicly under course policy."
 		],
 		tags: ["PostgreSQL", "AWS RDS", "Node", "Express", "React", "Recharts", "Python", "pandas"],
-		featured: true
+		featured: true,
+		demo: "similarity"
 	},
 	{
 		slug: "nba-player-props",
