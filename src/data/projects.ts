@@ -10,6 +10,8 @@ export type Project = {
 	repoUrl?: string;
 	demoUrl?: string;
 	embedUrl?: string;
+	/** key of an interactive demo component to render on the detail page (see DemoRenderer) */
+	demo?: string;
 };
 
 export const projects: Project[] = [
@@ -103,7 +105,8 @@ export const projects: Project[] = [
 			"PennOS also includes PennFAT, a FAT-based filesystem with kernel-level file operations, permission checking, single-writer enforcement, and a clean separation between kernel APIs and user-facing system calls."
 		],
 		tags: ["C", "Operating Systems", "Schedulers", "Filesystems", "Shell"],
-		featured: true
+		featured: true,
+		demo: "terminal"
 	}
 ];
 

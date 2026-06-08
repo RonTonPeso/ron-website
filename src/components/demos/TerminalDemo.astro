@@ -1,0 +1,434 @@
+---
+// Interactive mock of the PennOS shell. Self-contained: markup + inline logic + styles.
+// Adapted from the original PennOS terminal demo, restyled for the aurora theme.
+---
+
+<section class="demo-panel" aria-labelledby="pennos-demo-title">
+	<div class="demo-heading">
+		<p class="demo-eyebrow">Interactive artifact</p>
+		<h2 id="pennos-demo-title" class="demo-h2">PennOS shell</h2>
+		<p class="demo-note">
+			A browser mock of the shell. Try <code>help</code>, <code>ls</code>, <code>cat notes.txt</code>,
+			<code>ps</code>, or a background job like <code>sleep 3 &amp;</code>.
+		</p>
+	</div>
+
+	<div class="terminal-demo" data-terminal-demo>
+		<div class="terminal-bar" aria-hidden="true">
+			<span class="terminal-dot dot-a"></span>
+			<span class="terminal-dot dot-b"></span>
+			<span class="terminal-dot dot-c"></span>
+			<span class="terminal-bar-title">pennos — shell</span>
+		</div>
+		<div class="terminal-window" data-terminal-window>
+			<div class="terminal-output" data-terminal-output>
+				<div class="terminal-line">
+					<span class="terminal-prefix">pennos&gt;</span>
+					<span>Welcome to PennOS! Type 'help' to see available commands.</span>
+				</div>
+			</div>
+			<form class="terminal-input-form" data-terminal-form>
+				<span class="terminal-prompt">pennos&gt;</span>
+				<input
+					type="text"
+					class="terminal-input"
+					data-terminal-input
+					autocomplete="off"
+					spellcheck="false"
+					aria-label="PennOS terminal input"
+				/>
+			</form>
+		</div>
+	</div>
+</section>
+
+<script is:inline>
+	(() => {
+		const root = document.querySelector("[data-terminal-demo]");
+		if (!root) return;
+
+		const windowEl = root.querySelector("[data-terminal-window]");
+		const output = root.querySelector("[data-terminal-output]");
+		const form = root.querySelector("[data-terminal-form]");
+		const input = root.querySelector("[data-terminal-input]");
+
+		let jobs = [];
+		let jobIdCounter = 1;
+		let pidCounter = 3; // init is 1, shell is 2
+		let isBlocked = false;
+
+		const scrollToBottom = () => {
+			if (windowEl) windowEl.scrollTop = windowEl.scrollHeight;
+		};
+
+		const printLine = (text, prefix = "") => {
+			const line = document.createElement("div");
+			line.className = "terminal-line";
+			if (prefix) {
+				const p = document.createElement("span");
+				p.className = "terminal-prefix";
+				p.textContent = prefix;
+				line.appendChild(p);
+			}
+			const t = document.createElement("span");
+			t.textContent = text;
+			line.appendChild(t);
+			output.appendChild(line);
+			scrollToBottom();
+		};
+
+		const typeLine = async (text, delay = 10, prefix = "") => {
+			const line = document.createElement("div");
+			line.className = "terminal-line";
+			if (prefix) {
+				const p = document.createElement("span");
+				p.className = "terminal-prefix";
+				p.textContent = prefix;
+				line.appendChild(p);
+			}
+			const t = document.createElement("span");
+			line.appendChild(t);
+			output.appendChild(line);
+
+			for (let i = 0; i < text.length; i++) {
+				t.textContent += text[i];
+				scrollToBottom();
+				await new Promise((r) => setTimeout(r, delay));
+			}
+		};
+
+		const blockInput = (block) => {
+			isBlocked = block;
+			input.disabled = block;
+			if (!block) {
+				input.focus();
+				scrollToBottom();
+			}
+		};
+
+		const checkDoneJobs = () => {
+			let printed = false;
+			for (const j of jobs) {
+				if (j.state === "Done" && !j.notified) {
+					printLine(`[${j.id}] Done      ${j.cmd}`);
+					j.notified = true;
+					printed = true;
+				}
+			}
+			jobs = jobs.filter((j) => !j.notified);
+			return printed;
+		};
+
+		const handleCommand = async (cmdString) => {
+			checkDoneJobs(); // Print any finished background jobs first
+
+			if (!cmdString.trim()) {
+				printLine("", "pennos> ");
+				return;
+			}
+
+			printLine(cmdString, "pennos> ");
+
+			if (/[<>]/.test(cmdString)) {
+				await typeLine("PennOS web demo: Redirection is disabled in the browser environment.");
+				return;
+			}
+
+			const args = cmdString.trim().split(/\s+/);
+			const cmd = args[0];
+
+			blockInput(true);
+
+			switch (cmd) {
+				case "help":
+					await typeLine("Available mock commands: help, man, ls, cat, echo, sleep, ps, jobs, fg, clear");
+					break;
+				case "man":
+					if (args[1] === "ps") {
+						await typeLine("ps - report a snapshot of the current processes.");
+						await typeLine("Columns:");
+						await typeLine("  PID   - Process ID");
+						await typeLine("  PPID  - Parent Process ID");
+						await typeLine("  STAT  - State (R: running, S: stopped, Z: zombie, B: blocked)");
+						await typeLine("  CMD   - Command line");
+					} else if (args[1] === "ls") {
+						await typeLine("ls - list mock files in the current directory.");
+					} else if (args[1] === "cat") {
+						await typeLine("cat - concatenate files and print on the standard output. Usage: cat [file]");
+					} else if (args[1] === "echo") {
+						await typeLine("echo - print text back to the terminal.");
+					} else if (args[1] === "sleep") {
+						await typeLine("sleep - simulate a sleeping job for n seconds. Usage: sleep n [&]");
+					} else if (args[1] === "jobs") {
+						await typeLine("jobs - list active background jobs.");
+					} else if (args[1] === "fg") {
+						await typeLine("fg - bring a background job to the foreground. Usage: fg [job_id]");
+					} else if (args[1] === "clear") {
+						await typeLine("clear - clear the terminal screen.");
+					} else if (args[1] === "help") {
+						await typeLine("help - display a list of available mock commands.");
+					} else if (args[1] === "man") {
+						await typeLine("man - format and display the manual pages. Usage: man [command]");
+					} else if (args[1]) {
+						await typeLine(`man: No manual entry for ${args[1]}`);
+					} else {
+						await typeLine("What manual page do you want?");
+					}
+					break;
+				case "ls":
+					await typeLine("2 -rw-  128 Wed Apr 16 18:45:09 notes.txt");
+					await typeLine("3 -rw-  256 Wed Apr 16 18:45:13 readme.txt");
+					await typeLine("4 -rw-  128 Wed Apr 16 18:45:17 script.sh");
+					break;
+				case "cat":
+					if (args[1] === "notes.txt") {
+						await typeLine("the quick brown fox jumps over the lazy dog");
+					} else if (args[1] === "readme.txt") {
+						await typeLine("Welcome to the generic test file.");
+						await typeLine("This file demonstrates standard file system outputs.");
+					} else if (args[1] === "script.sh") {
+						await typeLine("echo 'hello world'");
+					} else {
+						await typeLine(`cat: ${args[1] || ""}: No such file or directory`);
+					}
+					break;
+				case "echo":
+					await typeLine(args.slice(1).join(" "));
+					break;
+				case "clear":
+					output.innerHTML = "";
+					break;
+				case "sleep": {
+					const isBg = args[args.length - 1] === "&";
+					const dur = parseInt(args[1]) || 2;
+					const pid = pidCounter++;
+
+					if (isBg) {
+						const jid = jobIdCounter++;
+						jobs.push({ id: jid, pid, cmd: cmdString.replace("&", "").trim(), state: "R", type: cmd, notified: false });
+						printLine(`[${jid}] ${pid}`);
+
+						setTimeout(() => {
+							const j = jobs.find((x) => x.id === jid);
+							if (j) j.state = "Done";
+						}, dur * 1000);
+					} else {
+						await new Promise((r) => setTimeout(r, dur * 1000));
+					}
+					break;
+				}
+				case "ps":
+					await typeLine("  PID  PPID  STAT CMD");
+					await typeLine("    1     0     B init");
+					await typeLine("    2     1     S shell");
+					for (const j of jobs) {
+						if (j.state !== "Done") {
+							const stat = j.type === "sleep" ? "S" : "R";
+							await typeLine(`  ${j.pid.toString().padStart(3)}     2     ${stat} ${j.cmd}`);
+						}
+					}
+					await typeLine(`  ${pidCounter.toString().padStart(3)}     2     R ps`);
+					pidCounter++;
+					break;
+				case "jobs":
+					if (jobs.length === 0) {
+						// no output if no jobs, just like real shell
+					} else {
+						for (const j of jobs) {
+							if (j.state === "Done") {
+								printLine(`[${j.id}] Done      ${j.cmd}`);
+								j.notified = true;
+							} else {
+								printLine(`[${j.id}] Running   ${j.cmd}`);
+							}
+						}
+						jobs = jobs.filter((j) => !j.notified);
+					}
+					break;
+				case "fg": {
+					const jid = parseInt(args[1]);
+					const job = jobs.find((j) => j.id === jid);
+					if (job && job.state !== "Done") {
+						printLine(job.cmd);
+						if (job.type === "sleep") {
+							await new Promise((r) => setTimeout(r, 2000));
+						} else {
+							await new Promise((r) => setTimeout(r, 3000));
+						}
+						job.state = "Done";
+					} else {
+						printLine(`fg: job not found: ${args[1] || ""}`);
+					}
+					break;
+				}
+				default:
+					await typeLine(`pennos: ${cmd}: command not found`);
+			}
+
+			blockInput(false);
+		};
+
+		form.addEventListener("submit", (e) => {
+			e.preventDefault();
+			const val = input.value;
+			input.value = "";
+			handleCommand(val);
+		});
+
+		windowEl.addEventListener("click", () => {
+			if (!isBlocked) input.focus();
+		});
+	})();
+</script>
+
+<style is:global>
+	/* scoped under .demo-panel / .terminal-demo so the dynamically-created lines still match */
+	.demo-panel {
+		margin-top: 3rem;
+	}
+
+	.demo-heading {
+		margin-bottom: 1.25rem;
+	}
+
+	.demo-eyebrow {
+		margin: 0 0 0.5rem;
+		color: var(--cyan);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.74rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.demo-h2 {
+		margin: 0;
+		color: var(--ink);
+		font-family: "Fraunces", Georgia, serif;
+		font-size: 2rem;
+		font-weight: 800;
+		letter-spacing: -0.015em;
+		line-height: 1.05;
+	}
+
+	.demo-note {
+		margin: 0.7rem 0 0;
+		max-width: 60ch;
+		color: var(--ink-soft);
+		font-size: 0.95rem;
+		line-height: 1.55;
+	}
+
+	.demo-note code {
+		padding: 0.08em 0.4em;
+		border-radius: 5px;
+		background: rgba(112, 255, 158, 0.08);
+		color: var(--green);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.86em;
+	}
+
+	.terminal-demo {
+		overflow: hidden;
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		background: linear-gradient(180deg, rgba(8, 16, 26, 0.92), rgba(4, 10, 18, 0.96));
+		box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(97, 242, 255, 0.04);
+	}
+
+	.terminal-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.7rem 1rem;
+		border-bottom: 1px solid var(--line);
+		background: rgba(255, 255, 255, 0.02);
+	}
+
+	.terminal-dot {
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+	}
+
+	.terminal-dot.dot-a {
+		background: var(--green);
+	}
+	.terminal-dot.dot-b {
+		background: var(--cyan);
+	}
+	.terminal-dot.dot-c {
+		background: var(--violet);
+	}
+
+	.terminal-bar-title {
+		margin-left: 0.5rem;
+		color: var(--ink-soft);
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+	}
+
+	.terminal-window {
+		height: clamp(280px, 46vh, 420px);
+		overflow-y: auto;
+		padding: 1.1rem 1.2rem 1.3rem;
+		font-family: "IBM Plex Mono", monospace;
+		font-size: 0.86rem;
+		line-height: 1.55;
+		color: var(--ink-muted);
+		cursor: text;
+	}
+
+	.terminal-line {
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.terminal-prefix,
+	.terminal-prompt {
+		margin-right: 0.55em;
+		color: var(--green);
+		font-weight: 600;
+	}
+
+	.terminal-input-form {
+		display: flex;
+		align-items: center;
+	}
+
+	.terminal-input {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		color: var(--ink);
+		font: inherit;
+		caret-color: var(--green);
+		outline: none;
+	}
+
+	.terminal-input:disabled {
+		opacity: 0.6;
+	}
+
+	/* aurora-tinted scrollbar to match the theme */
+	.terminal-window::-webkit-scrollbar {
+		width: 10px;
+	}
+	.terminal-window::-webkit-scrollbar-thumb {
+		border: 3px solid transparent;
+		border-radius: 999px;
+		background-clip: padding-box;
+		background-color: rgba(112, 255, 158, 0.25);
+	}
+
+	@media (max-width: 700px) {
+		.demo-h2 {
+			font-size: 1.6rem;
+		}
+		.terminal-window {
+			font-size: 0.8rem;
+		}
+	}
+</style>

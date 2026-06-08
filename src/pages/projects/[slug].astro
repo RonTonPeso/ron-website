@@ -1,6 +1,7 @@
 ---
 import { projects, type Project } from "../../data/projects";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DemoRenderer from "../../components/DemoRenderer.astro";
 
 export function getStaticPaths() {
 	return projects.map((project) => ({
@@ -59,5 +60,7 @@ const projectsHref = `${basePath}projects`;
 				}
 			</aside>
 		</div>
+
+		<DemoRenderer project={project} />
 	</article>
 </BaseLayout>
