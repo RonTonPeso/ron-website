@@ -9,6 +9,8 @@ export type Project = {
 	featured: boolean;
 	repoUrl?: string;
 	demoUrl?: string;
+	/** slide deck PDF in public/, path relative to the site base */
+	slidesUrl?: string;
 	embedUrl?: string;
 	/** key of an interactive demo component to render on the detail page (see DemoRenderer) */
 	demo?: string;
@@ -20,15 +22,17 @@ export const projects: Project[] = [
 		title: "Materials Informatics",
 		kind: "Research · AI/ML",
 		description:
-			"Predicting the Vickers microhardness of metal-ceramic nanocomposites with XGBoost and physics-informed features (Hall-Petch, Orowan, CTE mismatch), plus group-aware validation, ensemble uncertainty, and SHAP interpretability.",
+			"Uncertainty-aware ML for predicting the Vickers hardness of metal-ceramic nanocomposites: physics-informed features, leakage-aware validation, benchmarking on ~11k real materials, and conformal prediction intervals that admit when they break.",
 		details: [
-			"Research with the Li Group at the University of Pennsylvania on predicting the Vickers microhardness of metal-ceramic nanocomposites from composition and processing descriptors.",
-			"The model is an XGBoost regressor built on physics-informed features grounded in materials theory, including Hall-Petch grain-size strengthening, Orowan dispersion strengthening, and coefficient-of-thermal-expansion (CTE) mismatch.",
-			"To keep the results trustworthy on small, clustered materials data, it uses group-aware validation to avoid leakage across related samples, ensemble-based uncertainty estimates, and SHAP analysis to interpret which physical features drive each prediction."
+			"A pipeline from composition and processing to predicted hardness with calibrated uncertainty, built to screen composite candidates before committing lab time. Small literature-scale materials data is easy to fit and easy to fool yourself with, so the project is organized around honest evaluation rather than a headline accuracy number.",
+			"Features combine Magpie composition descriptors (matminer) with physics-informed terms from known metallurgy: Hall-Petch grain-size strengthening, Orowan particle strengthening, and thermal-expansion mismatch. Models are gradient-boosted trees and random forests with Hydra-configurable backends, and SHAP attribution confirms the physics terms drive the predictions.",
+			"Evaluation is leakage-aware: paper-grouped cross-validation with a quantified gap against random splits, plus a volume-fraction extrapolation holdout. The same features and models are benchmarked on Matbench's elastic moduli tasks (~11,000 measured materials, official folds), landing mid-pack against the leaderboard as expected for composition-only features.",
+			"Every prediction carries a conformal interval implemented from scratch, with measured coverage: naive ensemble intervals under-cover badly, split conformal restores nominal coverage, and coverage honestly collapses under extrapolation. The hardness data itself is currently a small synthetic set; the methodology is validated on the real Matbench data, and real literature extraction is the next step."
 		],
-		tags: ["Python", "XGBoost", "SHAP", "Machine Learning", "Materials Science"],
+		tags: ["Python", "scikit-learn", "Conformal Prediction", "Matbench", "SHAP", "Materials Science"],
 		featured: true,
-		repoUrl: "https://github.com/RonTonPeso/nanocomposite-hv-pipeline"
+		repoUrl: "https://github.com/RonTonPeso/nanocomposite-hv-pipeline",
+		slidesUrl: "nanocomposite-hardness-slides.pdf"
 	},
 	{
 		slug: "spotify-billboard-analytics",
